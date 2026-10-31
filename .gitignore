@@ -1,0 +1,29 @@
+# Python
+.venv/
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+
+# Environment
+.env
+.env*.local
+
+# Editor
+.DS_Store
+.vite/
+
+# JavaScript
+node_modules/
+build/
+frontend/package-lock.json
+
+# Uploads
+backend/uploads/*.pdf
+backend/uploads/*.png
+backend/uploads/*.jpg
+backend/uploads/*.jpeg
+
+# Archives
+*.tar.gz
