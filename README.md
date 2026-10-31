@@ -39,6 +39,6 @@ GROQ_API_KEY=your_groq_api_key
 JWT_SECRET=your_jwt_secret
 
 ## Team
-- **AHAD** — Backend API, Agent System, Core Pipeline
+- **AHMAD** — Backend API, Agent System, Core Pipeline
 - **ABDULLAH** — Database Models, Extraction Pipeline
 - **HASHIR** — Frontend, UI/UX
