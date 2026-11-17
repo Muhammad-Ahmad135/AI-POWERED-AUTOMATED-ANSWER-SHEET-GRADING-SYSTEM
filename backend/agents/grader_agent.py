@@ -13,6 +13,7 @@ from models.grading_result import GradingResult
 dotenv_path = os.path.join(os.path.dirname(__file__), '..', '..', '.env')
 load_dotenv(dotenv_path)
 
+
 class GraderAgent(BaseAgent):
     def __init__(self, submission_id, submission_type, core):
         super().__init__(agent_id=str(uuid.uuid4()), status="idle")
@@ -22,6 +23,9 @@ class GraderAgent(BaseAgent):
         self.db_service = DBService()
         self.client = Groq(api_key=os.getenv("GROQ_API_KEY"))
         self.max_retries = 3
+        # Model name is read from .env so it can be changed without editing code.
+        # llama-3.3-70b-versatile was shut down by Groq on 16 Aug 2026.
+        self.model = os.getenv("GROQ_MODEL", "openai/gpt-oss-120b")
 
     async def run(self):
         self.status = "busy"
@@ -34,6 +38,19 @@ class GraderAgent(BaseAgent):
                 return
 
             await self.grade_all_parts(parts)
+
+            # If the AI failed for every part, mark the submission as failed
+            # instead of reporting "done" with no grades.
+            graded = 0
+            for p in parts:
+                if self.db_service.query(GradingResult, {"part_id": p.part_id}):
+                    graded += 1
+            if graded == 0:
+                print(f"All parts failed for submission {self.submission_id}")
+                await self.core.on_failure(self.submission_id)
+                self.status = "failed"
+                return
+
             await self.send_finish_signal()
 
         except Exception as e:
@@ -90,13 +107,13 @@ class GraderAgent(BaseAgent):
                 response = await asyncio.get_event_loop().run_in_executor(
                     None,
                     lambda: self.client.chat.completions.create(
-                        model="llama-3.3-70b-versatile",
-                        max_tokens=500,
+                        model=self.model,
+                        max_tokens=1500,
                         messages=[{"role": "user", "content": prompt}]
                     )
                 )
 
-                response_text = response.choices[0].message.content.strip()
+                response_text = (response.choices[0].message.content or "").strip()
 
                 if "```json" in response_text:
                     response_text = response_text.split("```json")[1].split("```")[0].strip()
